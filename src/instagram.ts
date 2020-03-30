@@ -1,10 +1,16 @@
+import { config } from "dotenv";
 import {
   AccountRepositoryLoginResponseLogged_in_user,
   IgApiClient
 } from "instagram-private-api";
 import { translate } from "./mapChars";
-
 const ig = new IgApiClient();
+
+let previousValues = {
+  followers: null,
+  follower1: null,
+  follower2: null
+};
 
 function makeBio(
   follower1: string,
@@ -28,42 +34,98 @@ export async function getFollowers(pk: number): Promise<number> {
   return followers;
 }
 
-async function preLogin(): Promise<
+async function setupUser(): Promise<
   AccountRepositoryLoginResponseLogged_in_user
 > {
-  if (!ig.state.deviceId) {
-    ig.state.generateDevice(process.env.IG_USERNAME);
+  let loggedInAccount: AccountRepositoryLoginResponseLogged_in_user;
+
+  try {
+    if (!ig.state.deviceId) {
+      ig.state.generateDevice(process.env.IG_USERNAME);
+    }
+
+    await ig.simulate.preLoginFlow();
+
+    loggedInAccount = await ig.account.login(
+      process.env.IG_USERNAME,
+      process.env.IG_PASSWORD
+    );
+  } catch (_) {
+    throw new Error("Invalid credentials provided. Check you .env file");
   }
 
-  await ig.simulate.preLoginFlow();
-
-  return await ig.account.login(
-    process.env.IG_USERNAME,
-    process.env.IG_PASSWORD
-  );
+  return loggedInAccount;
 }
 
 async function postLogin() {
   process.nextTick(async () => await ig.simulate.postLoginFlow());
 }
 
-export async function updateBio() {
-  const loggedInUser = await preLogin();
+function shouldUpdate(followers: number): boolean {
+  const {
+    IG_FOLLOWER1: envFollower1,
+    IG_FOLLOWER2: envFollower2
+  } = process.env;
 
-  ig.account.setBiography(
-    makeBio(
-      process.env.IG_FOLLOWER1,
-      process.env.IG_FOLLOWER2,
-      await getFollowers(loggedInUser.pk)
-    )
-  );
+  const {
+    follower1: prevFollower1,
+    follower2: prevFollower2,
+    followers: prevFollowers
+  } = previousValues;
+
+  previousValues = {
+    followers,
+    follower1: envFollower1,
+    follower2: envFollower2
+  };
+
+  if (process.env.IS_CRON === "true") return true;
+
+  if (envFollower1 !== prevFollower1) return true;
+  if (envFollower2 !== prevFollower2) return true;
+
+  if (prevFollowers !== followers) return true;
+  return false;
+}
+
+export async function updateBio() {
+  config();
+
+  const loggedInUser = await setupUser();
+
+  const followers = await getFollowers(loggedInUser.pk);
+
+  if (followers === -1) {
+    if (process.env.SKIP_ON_ERROR !== "true") {
+      throw new Error(
+        "Fetching followers failed. You may have not provided wrong credentials"
+      );
+    }
+  }
+
+  const delay = Math.round(Math.random() * 1000 * 60 * 60);
+
+  if (shouldUpdate(followers)) {
+    ig.account.setBiography(
+      makeBio(process.env.IG_FOLLOWER1, process.env.IG_FOLLOWER2, followers)
+    );
+
+    if (process.env.IS_CRON !== "true") {
+      console.log(`Updated Bio. Next update in ${delay / 1000 / 60} minutes!`);
+    }
+  } else {
+    console.log(
+      `Did not update bio because nothing changed. Next try in ${delay /
+        1000 /
+        60} minutes!`
+    );
+  }
 
   await postLogin();
 
-  if (!process.env.IS_CRON) {
-    const delay = Math.random() * 1000 * 60 * 60;
-    console.log(`Next update in ${delay / 1000 / 60} minutes!`);
-
-    setTimeout(updateBio, delay);
+  if (process.env.IS_CRON === "true") {
+    return;
   }
+
+  setTimeout(updateBio, delay);
 }
