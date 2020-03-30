@@ -1,0 +1,20 @@
+{
+  "name": "instatrollfollowers",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "build": "node_modules/typescript/bin/tsc",
+    "start": "node dist/app.js"
+  },
+  "dependencies": {
+    "dotenv": "^8.2.0",
+    "instagram-private-api": "^1.39.1",
+    "typescript": "^3.8.3"
+  },
+  "devDependencies": {
+    "@types/cron": "^1.7.2",
+    "@types/dotenv": "^8.2.0",
+    "@types/node-cron": "^2.0.3"
+  }
+}
