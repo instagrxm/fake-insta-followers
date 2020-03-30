@@ -2,9 +2,7 @@
   "compilerOptions": {
     "target": "es2016",
     "module": "commonjs",
-    "lib": ["es5"],
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
+    "lib": ["es6"],
     "esModuleInterop": true,
     "outDir": "dist"
   }

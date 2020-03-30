@@ -5,7 +5,8 @@
   "license": "MIT",
   "scripts": {
     "build": "node_modules/typescript/bin/tsc",
-    "start": "node dist/app.js"
+    "start": "node dist/app.js",
+    "lint": "node_modules/eslint/bin/eslint.js --ext ts,tsx src/*"
   },
   "dependencies": {
     "dotenv": "^8.2.0",
@@ -13,8 +14,11 @@
     "typescript": "^3.8.3"
   },
   "devDependencies": {
-    "@types/cron": "^1.7.2",
     "@types/dotenv": "^8.2.0",
-    "@types/node-cron": "^2.0.3"
+    "@types/node": "^13.9.5",
+    "@typescript-eslint/eslint-plugin": "^2.25.0",
+    "@typescript-eslint/parser": "^2.25.0",
+    "eslint": "^6.8.0",
+    "eslint-config-prettier": "^6.10.1"
   }
 }

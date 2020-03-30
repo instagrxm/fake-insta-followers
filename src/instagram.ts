@@ -1,9 +1,10 @@
 import { config } from "dotenv";
 import {
-  AccountRepositoryLoginResponseLogged_in_user,
+  AccountRepositoryLoginResponseLogged_in_user as IgUser,
   IgApiClient
 } from "instagram-private-api";
 import { translate } from "./mapChars";
+
 const ig = new IgApiClient();
 
 let previousValues = {
@@ -16,10 +17,10 @@ function makeBio(
   follower1: string,
   follower2: string,
   currentFollowers: number
-) {
+): string {
   return `Followed by ${translate(follower1)}, ${translate(
     follower2
-  )} and ${translate(currentFollowers - 2 + " others")}`;
+  )} and ${translate(`${currentFollowers - 2} others`)}`;
 }
 
 export async function getFollowers(pk: number): Promise<number> {
@@ -34,10 +35,8 @@ export async function getFollowers(pk: number): Promise<number> {
   return followers;
 }
 
-async function setupUser(): Promise<
-  AccountRepositoryLoginResponseLogged_in_user
-> {
-  let loggedInAccount: AccountRepositoryLoginResponseLogged_in_user;
+async function setupUser(): Promise<IgUser> {
+  let loggedInAccount: IgUser;
 
   try {
     if (!ig.state.deviceId) {
@@ -57,7 +56,7 @@ async function setupUser(): Promise<
   return loggedInAccount;
 }
 
-async function postLogin() {
+function postLogin(): void {
   process.nextTick(async () => await ig.simulate.postLoginFlow());
 }
 
@@ -88,7 +87,7 @@ function shouldUpdate(followers: number): boolean {
   return false;
 }
 
-export async function updateBio() {
+export async function updateBio(): Promise<void> {
   config();
 
   const loggedInUser = await setupUser();
@@ -121,7 +120,7 @@ export async function updateBio() {
     );
   }
 
-  await postLogin();
+  postLogin();
 
   if (process.env.IS_CRON === "true") {
     return;
