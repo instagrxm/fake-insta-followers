@@ -1,6 +1,6 @@
 import { config } from "dotenv";
 import {
-  AccountRepositoryLoginResponseLogged_in_user as IgUser,
+  AccountRepositoryLoginResponseLogged_in_user as IGUser,
   IgApiClient
 } from "instagram-private-api";
 import { translate } from "./mapChars";
@@ -35,8 +35,8 @@ export async function getFollowers(pk: number): Promise<number> {
   return followers;
 }
 
-async function setupUser(): Promise<IgUser> {
-  let loggedInAccount: IgUser;
+async function setupUser(): Promise<IGUser> {
+  let loggedInAccount: IGUser;
 
   try {
     if (!ig.state.deviceId) {
